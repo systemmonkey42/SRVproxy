@@ -1,0 +1,104 @@
+SRVproxy README
+===============
+
+
+About SRV records
+-----------------
+
+SRV records are bits of information in the Domain Name System that replace
+older, more blunt mechanisms with a way to lookup a particular service by name.
+This has two advantages: it makes locating a service (and its port) simpler and
+more consistent than before, and it enables redundancy by specifying laod
+balancing and backup systems.
+
+Being able to lookup services by port has the advantage that any protocol can
+be located anywhere, and that it can easily be switched, without resolving to
+incorrect tricks such as the "www." prefix in front of a domain.
+
+The redundancy enabled by SRV records, plus the need to interpret them with
+that aspect in mind, makes it possible to design "SRV aware" networking clients
+that connect to the first server found responding.  This makes the client
+application (and perhaps part of its networking topology) the only remaining
+single point of failure, or in other words: everything is rock-solid, with the
+exception of the client machine.
+
+
+Why SRV proxies?
+----------------
+
+Ideal as it may be to have only a single point of failure in the client,
+everyday practice is that many, many networking clients exist that do not
+implement SRV records yet; most of them do not even recognise multiple
+IP-numbers for one server name -- which the Domain Name System is quite willing
+to return, and which is indeed done for larger web sites.
+
+The next best thing is to use proxies, nearby the client, and have those
+recognose SRV records on behalf of the client.  And when SRV records are not
+found, this proxy should fall back to the proper behaviour regarding multiple
+IP addresses for a server name.
+
+Such a proxy can be simple, so it can be run on the client machine.
+Alternatively, it can be run on a machine on the local network; since the
+connectivity to such a machine is usually singular, the latter would not
+enlarge the area that counts as a single point of failure.
+
+
+What SRV proxies are included?
+------------------------------
+
+SRV proxies can be made for all protocols that mention the host name to be
+conteacted in an early phase of the protocol; notably, before any content is
+exchanged.
+
+A clear example is HTTP, whose proxy architecture involves sending a first
+line with the full URL, including the hostname contacted, to the proxy:
+	GET http://FingerHosting.com/download.html HTTP/1.1
+Since this is quite possible and quite useful, this proxy is provided here.
+
+Another example would have been SMTP, if that protocol would need this
+enhancement.  But the special MX records used for mail already provide the
+robustness needed, so it is not provided here.
+
+The LDAP protocol is another instance where an SRV proxy would be possible.
+There is an option of using root.openldap.org as a superior node to any LDAP
+repository, which would introduce a remote single point of failure; but using
+OpenLDAP with a dnssrv backend makes a similar facility possible on the local
+network.  LDAP browsers may be told to start searching (for dc=... queries) at
+such a proxy.  Starting with OpenLDAP 2.1.5, it is possible to use the dnssrv
+backend as a fallback to use when a serviced domain is not present on the LDAP
+server.
+Since LDAP is taken care of already, not SRV proxy for that protocol is
+included here.
+
+The FTP protocol does not send the host name contacted as part of the protocol,
+so it is not possible to build an SRV proxy for FTP.
+
+An HTTPS server starts by sending its certificate, containing its name, before
+doing anything else; but special provisions have been made to allow proxies for
+HTTPS.  Effectively, these proxies are men in the middle, so that is a bit
+counter-intuitive.
+This protocol is not supported here yet, but it might be in the future.
+
+In short, the main area covered here is an HTTP proxy.
+
+
+Starting the HTTP proxy
+-----------------------
+
+The SRV proxy for the HTTP protocol is invoked with some domain:
+	SRVproxyHTTP orvelte.nep
+It looks up the _httpproxy._tcp service under this domain to learn what
+interface, IP-number and port to connect to.  It reports its deeds in syslog.
+
+
+Author
+------
+
+The author of this package is Rick van Rein, rick@vanrein.org.
+It was written as a spin-off from work done on
+	http://DNS.vanrein.org/srv
+	http://FingerHosting.com/
+
+
+Enjoy!
+ -Rick
